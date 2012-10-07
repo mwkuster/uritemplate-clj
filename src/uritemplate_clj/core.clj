@@ -10,7 +10,8 @@
 
 (defn partial-encode [^String s]
   (clojure.string/join 
-   (map (fn[c] (if (>= (.indexOf special-chars (int c)) 0) c (codec/url-encode c))) s)))
+   (map (fn[c] 
+          (if (>= (.indexOf special-chars (int c)) 0) c (codec/url-encode c))) s)))
 
 (defrecord Token [text prefix])
 
@@ -19,20 +20,30 @@
       [parts (re-find #"\{([\.#+/\.;\?\&])?([a-zA-Z0-9,_\*:]+)\}" token)]
     (->Token (nth parts 2) (nth parts 1))))
 
+(defn handle-values [var values]
+  "Handle values for this variable"
+  (let
+      [val (values var)]
+    (if (vector? val)
+      val
+      (vector val))))
+
 (defn split-variables [variable values separator encoding-fn]
   (clojure.string/join separator
-     (map 
-      #(encoding-fn 
-        (values %))
+     (mapcat 
+      #(map 
+        encoding-fn 
+        (handle-values % values))
       (clojure.string/split
        (:text variable) #","))))
+
+
 
 (defn split-variables-with-vars [variable values separator]
   (clojure.string/join separator
      (map 
-      #(str
-        %  "=" 
-        (partial-encode (values %)))
+      #(str %  "=" 
+           (clojure.string/join separator (map partial-encode (handle-values % values))))
       (clojure.string/split
        (:text variable) #","))))
 
