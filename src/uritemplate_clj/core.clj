@@ -32,7 +32,7 @@
     (class (values (:text variable)))))
 
 (defmethod handle-value String [^Variable variable values separator encoding-fn]
-  (println "Print string")
+  ;(println "Print string")
   (encoding-fn 
    (if (= (first (:postfix variable)) \:)
      (let
@@ -44,13 +44,13 @@
      (values (:text variable)))))
 
 (defmethod handle-value java.util.Collection [^Variable variable values separator encoding-fn]
-  (println "Print collection")
+  ;(println "Print collection")
   (if (= (:postfix variable) "*")
     (clojure.string/join separator (map #(str (:text variable) "=" (encoding-fn %)) (values (:text variable))))
     (clojure.string/join "," (map encoding-fn (values (:text variable))))))
 
 (defmethod handle-value clojure.lang.IPersistentMap [^Variable variable values separator encoding-fn]
-  (println "Print map")
+  ;(println "Print map")
   (clojure.string/join ","  
                        (map encoding-fn (keys (values (:text variable))))))
 
