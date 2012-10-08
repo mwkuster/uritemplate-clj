@@ -34,7 +34,14 @@
 (defmethod handle-value String [^Variable variable values separator encoding-fn]
   (println "Print string")
   (encoding-fn 
-   (values (:text variable))))
+   (if (= (first (:postfix variable)) \:)
+     (let
+         [to-pos (Integer/parseInt (subs (:postfix variable) 1))
+          res-val (values (:text variable))]
+     (subs
+      (values (:text variable))
+      0 (if (< to-pos (count res-val)) to-pos (count res-val))))
+     (values (:text variable)))))
 
 (defmethod handle-value java.util.Collection [^Variable variable values separator encoding-fn]
   (println "Print collection")
