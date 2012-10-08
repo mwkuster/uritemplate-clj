@@ -83,7 +83,10 @@
      (map 
       #(let 
             [var (parse-variable %)]
-         (handle-value (assoc var :postfix "*") values separator partial-encode))
+         (clojure.string/join "="
+          (list
+           (:text var)
+           (handle-value (assoc var :postfix "*") values separator partial-encode))))
       (clojure.string/split
        (:text variable) #","))))
 
