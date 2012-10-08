@@ -60,6 +60,8 @@
    ","  
    (map full-encode (mapcat identity (values (:text variable))))))
 
+(defmethod handle-value nil [variable values separator encoding-fn] nil)
+
 (defmethod handle-value :default [variable values separator encoding-fn]
   (println "default handle value")
   (println variable)
@@ -68,15 +70,20 @@
   "abc")
 
 (defn split-variables [variable values separator encoding-fn]
-  (clojure.string/join separator
-     (map
-      #(handle-value (parse-variable %) values separator encoding-fn)
-      (clojure.string/split
-       (:text variable) #","))))
+  (let
+      [res (filter string?
+                   (map
+                    #(handle-value (parse-variable %) values separator encoding-fn)
+                    (clojure.string/split
+                     (:text variable) #",")))]
+    (if (not (empty? res))
+      (clojure.string/join separator res))))
 
 
 (defn split-variables-with-vars [variable values separator]
-  (clojure.string/join separator
+  (clojure.string/join 
+   separator
+   (filter string?
      (map 
       #(let 
             [var (parse-variable %)]
@@ -85,7 +92,7 @@
            (:text var)
            (handle-value var values separator partial-encode))))
       (clojure.string/split
-       (:text variable) #","))))
+       (:text variable) #",")))))
 
 (defmulti handle-token 
   (fn [variable values]
@@ -96,12 +103,18 @@
   (str "#"  (split-variables variable values "," partial-encode)))
 
 (defmethod handle-token "/" [variable values]
-  "Path segments, slash-prefixed"
-  (str "/"  (split-variables variable values "/" full-encode)))
+  "Path segments, slash-prefixed, cf. 3.2.6"
+  (let
+      [res (split-variables variable values "/" full-encode)]
+    (if res
+      (str "/" res))))
 
 (defmethod handle-token "." [variable values]
-  "Label expansion, dot-prefixed"
-  (str "." (split-variables variable values "." partial-encode)))
+  "Label expansion, dot-prefixed, cf. 3.2.5"
+  (let
+      [res (split-variables variable values "." full-encode)]
+    (if res
+      (str "." res))))
 
 (defmethod handle-token "+" [variable values]
   "Reserved string expansion does not convert (cf. 1.5): "

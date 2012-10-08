@@ -43,3 +43,32 @@
          (if (vector? (second tc))
            (is (some #(= res %) (second tc)))
            (is (= res (second tc)))))))))
+
+(deftest additional-test
+  (let
+      [template "eli{/type}{/agent*}{/year}{/natural_identifier,version,language}"
+       values1 {"type" "dir", 
+               "agent"  ["ep" "consil"], 
+               "year"  "2003",
+               "natural_identifier" "98",
+               "version" "R3",
+               "language" "SPA"}
+       values2 {"type" "dir", 
+               "agent"  ["ep" "consil"], 
+               "year"  "2003",
+               "natural_identifier" "98"}
+       values3 {"type" "dir", 
+                "year"  "2003",
+                "natural_identifier" "98",
+                "version" "R3",
+                "language" "SPA"}
+       values4 {"type" "dir", 
+                "agent"  ["ep" "consil"], 
+                "year"  "2003",
+                "natural_identifier" "98",
+                "language" "SPA"}]
+    (is (= (uritemplate template values1) "eli/dir/ep/consil/2003/98/R3/SPA"))
+    (is (= (uritemplate template values2) "eli/dir/ep/consil/2003/98"))
+    (is (= (uritemplate template values3) "eli/dir/2003/98/R3/SPA"))
+    (is (= (uritemplate template values4) "eli/dir/ep/consil/2003/98/SPA"))))
+    
