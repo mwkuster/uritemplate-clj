@@ -40,6 +40,6 @@
     (doall 
      (for [tc testcases] 
        (let [res (uritemplate (first tc) vars)]
-         (if (seq? (second tc))
+         (if (vector? (second tc))
            (is (some #(= res %) (second tc)))
            (is (= res (second tc)))))))))

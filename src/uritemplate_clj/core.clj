@@ -1,6 +1,9 @@
 (ns uritemplate-clj.core
   (:require [ring.util.codec :as codec]))
 
+;Author: Marc Wilhelm Kuester
+;Code releazed under the Eclipse Public License
+
 (def ^String special-chars "/?#[]@!$&'()*+,;=")
 
 (defn full-encode [^String s]
@@ -45,14 +48,17 @@
 
 (defmethod handle-value java.util.Collection [^Variable variable values separator encoding-fn]
   ;(println "Print collection")
-  (if (= (:postfix variable) "*")
-    (clojure.string/join separator (map #(str (:text variable) "=" (encoding-fn %)) (values (:text variable))))
-    (clojure.string/join "," (map encoding-fn (values (:text variable))))))
+  (clojure.string/join 
+     (if (= (:postfix variable) "*")
+       separator 
+       ",") (map encoding-fn (values (:text variable)))))
+
 
 (defmethod handle-value clojure.lang.IPersistentMap [^Variable variable values separator encoding-fn]
   ;(println "Print map")
-  (clojure.string/join ","  
-                       (map encoding-fn (keys (values (:text variable))))))
+  (clojure.string/join 
+   ","  
+   (map full-encode (mapcat identity (values (:text variable))))))
 
 (defmethod handle-value :default [variable values separator encoding-fn]
   (println "default handle value")
@@ -61,21 +67,12 @@
   (println separator)
   "abc")
 
-;; (defn handle-value [var values ]
-;;   "Handle value(s) for this variable"
-;;   (let
-;;       [val (values var)]
-;;     (if (vector? val)
-;;       val
-;;       (vector val))))
-
 (defn split-variables [variable values separator encoding-fn]
   (clojure.string/join separator
      (map
       #(handle-value (parse-variable %) values separator encoding-fn)
       (clojure.string/split
        (:text variable) #","))))
-
 
 
 (defn split-variables-with-vars [variable values separator]
@@ -86,7 +83,7 @@
          (clojure.string/join "="
           (list
            (:text var)
-           (handle-value (assoc var :postfix "*") values separator partial-encode))))
+           (handle-value var values separator partial-encode))))
       (clojure.string/split
        (:text variable) #","))))
 
@@ -100,7 +97,7 @@
 
 (defmethod handle-token "/" [variable values]
   "Path segments, slash-prefixed"
-  (str "/"  (split-variables variable values "/" partial-encode)))
+  (str "/"  (split-variables variable values "/" full-encode)))
 
 (defmethod handle-token "." [variable values]
   "Label expansion, dot-prefixed"
@@ -121,7 +118,9 @@
 (defmethod handle-token ";" [variable values]
   "Path-style parameters, semicolon-prefixed"
   ;;Special rule in 3.2.7: if a variable is empty, no = should be appended. So ;x=1024;y=768;empty and not ;x=1024;y=768;empty=
-  (str ";" (split-variables-with-vars variable values ";")))
+  ;hack
+  (clojure.string/replace 
+   (str ";" (split-variables-with-vars variable values ";")) #"=$|=;" ""))
 
 (defmethod handle-token :default [variable values]
   "Variable has no special modifier, so just apply simple string expansion"
