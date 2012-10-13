@@ -46,7 +46,8 @@
 
 (deftest additional-test
   (let
-      [template "eli{/type}{/agent*}{/year}{/natural_identifier,version,language}"
+      [template1 "abc{/type}{/agent*}{/year}{/natural_identifier,version,language}"
+       template2 "abc{/type}/{,agent*}{/year}{/natural_identifier,version,language}"
        values1 {"type" "dir", 
                "agent"  ["ep" "consil"], 
                "year"  "2003",
@@ -67,8 +68,9 @@
                 "year"  "2003",
                 "natural_identifier" "98",
                 "language" "SPA"}]
-    (is (= (uritemplate template values1) "eli/dir/ep/consil/2003/98/R3/SPA"))
-    (is (= (uritemplate template values2) "eli/dir/ep/consil/2003/98"))
-    (is (= (uritemplate template values3) "eli/dir/2003/98/R3/SPA"))
-    (is (= (uritemplate template values4) "eli/dir/ep/consil/2003/98/SPA"))))
+    (is (= (uritemplate template1 values1) "abc/dir/ep/consil/2003/98/R3/SPA"))
+    (is (= (uritemplate template1 values2) "abc/dir/ep/consil/2003/98"))
+    (is (= (uritemplate template1 values3) "abc/dir/2003/98/R3/SPA"))
+    (is (= (uritemplate template1 values4) "abc/dir/ep/consil/2003/98/SPA"))
+    (is (= (uritemplate template2 values4) "abc/dir/ep,consil/2003/98/SPA"))))
     

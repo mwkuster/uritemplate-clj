@@ -1,4 +1,4 @@
-(defproject uritemplate-clj "0.5.0-SNAPSHOT"
+(defproject uritemplate-clj "0.2.5-SNAPSHOT"
   :description "Clojure implementation of URI Templates as specified in RFC 6570 (http://tools.ietf.org/html/rfc6570), currently level 3 compatible"
   :url "https://github.com/mwkuster/uritemplate-clj"
   :license {:name "Eclipse Public License"
