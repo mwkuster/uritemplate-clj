@@ -21,20 +21,19 @@
 
 (defn parse-variable ^Variable [variable]
   (let
-      [parts (re-find #"([a-zA-Z0-9,_]+)(\*|:\d+)?" variable)]
+      [parts (re-find #"([a-zA-Z0-9\.%,_]+)(\*|:\d+)?" variable)]
     (->Variable (nth parts 1) (nth parts 2))))
 
 (defrecord Token [variables prefix])
 
 (defn parse-token ^Token [token]
   (let
-      [parts (re-find #"\{([\.#+/\.;\?\&])?([a-zA-Z0-9,_\*:]+)\}" token)]
+      [parts (re-find #"\{([\.#+/\.;\?\&])?([a-zA-Z0-9\.%,_\*:]+)\}" token)]
    
     (->Token (map parse-variable (clojure.string/split (nth parts 2) #",")) (nth parts 1))))
 
-
-
 (defmulti handle-value 
+  "Handling of individual variables. Returns the variable replaced by the supplied values"
   (fn [^Variable variable values separator encoding-fn]
     (class (values (:text variable)))))
 
@@ -66,13 +65,19 @@
       (= separator "&") "&"
       (= separator ";") ";"
       :else ",")
+     ;The handling of maps are rather tricky, as here they map keys
+     ;themselves become keys if the postfix is "*". However, the
+     ;variable name stays key without that postfix
      (map #(str 
-            (first %)
+            (encoding-fn (first %))
             "="
             (encoding-fn (second %)))  (values (:text variable))))
     (cs/join "," (map encoding-fn (mapcat identity (values (:text variable)))))))
   
 (defmethod handle-value nil [variable values separator encoding-fn] nil)
+
+(defmethod handle-value Number [variable values separator encoding-fn] (values (:text variable)))
+
 
 (defmethod handle-value :default [variable values separator encoding-fn]
   (println "default handle value")
@@ -82,6 +87,7 @@
   "error-case")
 
 (defn handle-variables 
+  "Method calls handle-value for each variable named in the token"
   ([token values separator] (handle-variables token values separator partial-encode))
   ([token values separator encoding-fn ]
      (let
@@ -94,6 +100,7 @@
 
 
 (defmulti handle-token 
+  "Takes a token and replaces its variables with the supplied values"
   (fn [token values]
     (:prefix token)))
 
@@ -105,7 +112,7 @@
                (map 
                 #(let
                      [res (handle-value % values "#" partial-encode)]         
-                   (cs/join "," (if (string? res) (list res) res)))
+                   (cs/join "," (if (coll? res) res (list res))))
                 (:variables token)))]
     (if (not (empty? s))
       (str "#" (cs/join "," s)))))
@@ -119,7 +126,7 @@
                (map 
                 #(let
                      [res (handle-value % values "/" full-encode)]         
-                   (cs/join "/" (if (string? res) (list res) res)))
+                   (cs/join "/" (if (coll? res)  res (list res))))
                 (:variables token)))]
     (if (not (empty? s))
       (str "/" (cs/join "/" s)))))
@@ -133,7 +140,7 @@
                (map 
                 #(let
                      [res (handle-value % values "." full-encode)]         
-                   (cs/join "." (if (string? res) (list res) res)))
+                   (cs/join "." (if (coll? res) res (list res))))
                 (:variables token)))]
     (if (not (empty? s))
       (str "." (cs/join "." s)))))
@@ -147,7 +154,7 @@
                (map 
                 #(let
                      [res (handle-value % values "." partial-encode)]         
-                   (cs/join "," (if (string? res) (list res) res)))
+                   (cs/join "," (if (coll? res) res (list res))))
                 (:variables token)))]
     (if (not (empty? s))
       (cs/join "," s))))
@@ -160,11 +167,19 @@
   (str
    "?"
    (cs/join "&"
-    (map 
-     #(let
-          [res (handle-value % values "&" full-encode)]         
-          (cs/join "&" (map (fn [r] (build-= % values r)) (if (string? res) (list res) res))))
-   (:variables token)))))
+            (filter
+             (fn [r] (println r) (not (empty? r)))
+             (map 
+              #(let
+                   [res (handle-value % values "&" full-encode)]         
+                 (cs/join "&" 
+                          (map 
+                           (fn [r] (build-= % values r))
+                           (cond
+                            (coll? res) res 
+                            (nil? res) nil
+                            :else (list res)))))
+             (:variables token))))))
 
 (defmethod handle-token "&" [token values]
   "Form-style query continuation"
@@ -174,7 +189,7 @@
     (map 
      #(let
           [res (handle-value % values "&" full-encode)]         
-          (cs/join "&" (map (fn [r] (build-= % values r)) (if (string? res) (list res) res))))
+          (cs/join "&" (map (fn [r] (build-= % values r)) (if (coll? res) res (list res)))))
    (:variables token)))))
 
 
@@ -189,7 +204,7 @@
              (map 
               #(let
                    [res (handle-value % values ";" full-encode)]         
-                 (cs/join ";" (map (fn [r] (build-= % values r))  (if (string? res) (list res) res))))
+                 (cs/join ";" (map (fn [r] (build-= % values r))  (if (coll? res) res (list res)))))
               (:variables token)))) #"=$|=;" ""))
 
 (defmethod handle-token :default [token values]
@@ -200,7 +215,7 @@
                (map 
                 #(let
                      [res (handle-value % values "." full-encode)]         
-                   (cs/join "," (if (string? res) (list res) res)))
+                   (cs/join "," (if (coll? res) res (list res))))
                 (:variables token)))]
     (if (not (empty? s))
       (cs/join "," s))))

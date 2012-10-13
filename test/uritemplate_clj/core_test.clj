@@ -43,6 +43,21 @@
            (is (some #(= res %) (second tc)))
            (is (= res (second tc)))))))))
 
+(def extended-tests  (cheshire.core/parse-stream (clojure.java.io/reader "test/uritemplate_clj/extended-tests.json")))
+
+(deftest extended-test
+  (let
+      [level (extended-tests "Additional Examples 1")
+       vars (level "variables")
+       testcases (level "testcases")]
+    (doall 
+     (for [tc testcases] 
+       (let [res (uritemplate (first tc) vars)]
+         (println res)
+         (if (vector? (second tc))
+           (is (some #(= res %) (second tc)))
+           (is (= res (second tc)))))))))
+
 (deftest additional-test
   (let
       [template1 "abc{/type}{/agent*}{/year}{/natural_identifier,version,language}"
