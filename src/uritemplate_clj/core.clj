@@ -104,75 +104,55 @@
   (fn [token values]
     (:prefix token)))
 
-(defmethod handle-token "#" [token values]
-  "Fragment expansion with multiple variables"
-  (let
-      [s
-       (filter #(not (empty? %))
-               (map 
-                #(let
-                     [res (handle-value % values "#" partial-encode)]         
-                   (cs/join "," (if (coll? res) res (list res))))
-                (:variables token)))]
-    (if (not (empty? s))
-      (str "#" (cs/join "," s)))))
 
-
-(defmethod handle-token "/" [token values]
-  "Path segments, slash-prefixed, cf. 3.2.6"
-  (let
-      [s
-       (filter #(not (empty? %))
-               (map 
-                #(let
-                     [res (handle-value % values "/" full-encode)]         
-                   (cs/join "/" (if (coll? res)  res (list res))))
-                (:variables token)))]
-    (if (not (empty? s))
-      (str "/" (cs/join "/" s)))))
-
+(defn- process-unnamed-token [token values separator first-char encoding-fn]
+   (let
+       [res
+        (filter
+         (fn [r] (not (empty? r)))
+         (map 
+          #(let
+               [res (handle-value % values separator encoding-fn)]         
+             (cs/join separator
+                      (cond
+                       (coll? res) res 
+                       (nil? res) nil
+                       :else (list res))))
+          (:variables token)))]
+     (if (not (empty? res))
+       (str
+        first-char
+        (cs/join separator res)))))
 
 (defmethod handle-token "." [token values]
   "Label expansion, dot-prefixed, cf. 3.2.5"
-  (let
-      [s
-       (filter #(not (empty? %))
-               (map 
-                #(let
-                     [res (handle-value % values "." full-encode)]         
-                   (cs/join "." (if (coll? res) res (list res))))
-                (:variables token)))]
-    (if (not (empty? s))
-      (str "." (cs/join "." s)))))
+  (process-unnamed-token token values "." "." full-encode))
 
+(defmethod handle-token "/" [token values]
+  "Path segments, slash-prefixed, cf. 3.2.6"
+  (process-unnamed-token token values "/" "/" full-encode))
+
+(defmethod handle-token "#" [token values]
+  "Fragment expansion with multiple variables"
+  (process-unnamed-token token values "," "#" partial-encode))
 
 (defmethod handle-token "+" [token values]
   "Reserved string expansion does not convert (cf. 1.5): "
-  (let
-      [s
-       (filter #(not (empty? %))
-               (map 
-                #(let
-                     [res (handle-value % values "." partial-encode)]         
-                   (cs/join "," (if (coll? res) res (list res))))
-                (:variables token)))]
-    (if (not (empty? s))
-      (cs/join "," s))))
+  (process-unnamed-token token values "," "" partial-encode))
 
 (defn- build-= [variable values r] 
   (str (if (and (map? (values (:text variable))) (= (:postfix variable) "*")) "" (str (:text variable) "=")) r))
 
-(defmethod handle-token "?" [token values]
-  "Form-style query, ampersand-separated"
-  (str
-   "?"
-   (cs/join "&"
+(defn- process-named-token [token values separator first-char]
+ (str
+   first-char
+   (cs/join separator
             (filter
-             (fn [r] (println r) (not (empty? r)))
+             (fn [r] (not (empty? r)))
              (map 
               #(let
-                   [res (handle-value % values "&" full-encode)]         
-                 (cs/join "&" 
+                   [res (handle-value % values separator full-encode)]         
+                 (cs/join separator
                           (map 
                            (fn [r] (build-= % values r))
                            (cond
@@ -181,47 +161,29 @@
                             :else (list res)))))
              (:variables token))))))
 
+
+(defmethod handle-token "?" [token values]
+  "Form-style query, ampersand-separated"
+  (process-named-token token values "&" "?"))
+
 (defmethod handle-token "&" [token values]
   "Form-style query continuation"
-  (str
-   "&"
-   (cs/join "&"
-    (map 
-     #(let
-          [res (handle-value % values "&" full-encode)]         
-          (cs/join "&" (map (fn [r] (build-= % values r)) (if (coll? res) res (list res)))))
-   (:variables token)))))
-
+  (process-named-token token values "&" "&"))
 
 (defmethod handle-token ";" [token values]
   "Path-style parameters, semicolon-prefixed"
   ;;Special rule in 3.2.7: if a variable is empty, no = should be appended. So ;x=1024;y=768;empty and not ;x=1024;y=768;empty=
   ;hack 
   (cs/replace
-   (str
-    ";"
-    (cs/join ";"
-             (map 
-              #(let
-                   [res (handle-value % values ";" full-encode)]         
-                 (cs/join ";" (map (fn [r] (build-= % values r))  (if (coll? res) res (list res)))))
-              (:variables token)))) #"=$|=;" ""))
+   (process-named-token token values ";" ";")
+   #"=$|=;" ""))
 
 (defmethod handle-token :default [token values]
   "Variable has no special modifier, so just apply simple string expansion"
-  (let
-      [s
-       (filter #(not (empty? %))
-               (map 
-                #(let
-                     [res (handle-value % values "." full-encode)]         
-                   (cs/join "," (if (coll? res) res (list res))))
-                (:variables token)))]
-    (if (not (empty? s))
-      (cs/join "," s))))
-;   (handle-variables token values "," full-encode))
+  (process-unnamed-token token values "," "" full-encode))
 
-(defn tokenize [template]
+
+(defn- tokenize [template]
   "Tokenize the template string, taken from https://bitbucket.org/dfa/uritemplate"
   (re-seq #"\{[^\{]+\}|[^{}]+" template)) 
 
