@@ -144,22 +144,40 @@
   (str (if (and (map? (values (:text variable))) (= (:postfix variable) "*")) "" (str (:text variable) "=")) r))
 
 (defn- process-named-token [token values separator first-char]
- (str
-   first-char
-   (cs/join separator
-            (filter
-             (fn [r] (not (empty? r)))
-             (map 
-              #(let
-                   [res (handle-value % values separator full-encode)]         
-                 (cs/join separator
-                          (map 
-                           (fn [r] (build-= % values r))
+   (let
+       [res
+        (filter
+         (fn [r] (not (empty? r)))
+         (map 
+          #(let
+               [res (handle-value % values separator full-encode)]         
+             (cs/join separator
+                      (map (fn[r] (build-= % values r))
                            (cond
                             (coll? res) res 
                             (nil? res) nil
                             :else (list res)))))
-             (:variables token))))))
+          (:variables token)))]
+     (if (not (empty? res))
+       (str
+        first-char
+        (cs/join separator res)))))
+ ;; (str
+ ;;   first-char
+ ;;   (cs/join separator
+ ;;            (filter
+ ;;             (fn [r] (not (empty? r)))
+ ;;             (map 
+ ;;              #(let
+ ;;                   [res (handle-value % values separator full-encode)]         
+ ;;                 (cs/join separator
+ ;;                          (map 
+ ;;                           (fn [r] (build-= % values r))
+ ;;                           (cond
+ ;;                            (coll? res) res 
+ ;;                            (nil? res) nil
+ ;;                            :else (list res)))))
+ ;;             (:variables token))))))
 
 
 (defmethod handle-token "?" [token values]
