@@ -18,22 +18,9 @@
 (def spec-examples 
   (cheshire.core/parse-stream (clojure.java.io/reader "test/uritemplate_clj/spec-examples.json")))
 
-(defn- level-test [selection]
+(defn- level-test [examples selection]
   (let
-      [level (spec-examples selection)
-       vars (level "variables")
-       testcases (level "testcases")]
-    (doall 
-     (for [tc testcases] 
-       (is (= (uritemplate (first tc) vars) (second tc)))))))
-
-(deftest level1-test (level-test "Level 1 Examples"))
-(deftest level2-test (level-test "Level 2 Examples"))
-(deftest level3-test (level-test "Level 3 Examples"))
-
-(deftest level4-test
- (let
-      [level (spec-examples "Level 4 Examples")
+      [level (examples selection)
        vars (level "variables")
        testcases (level "testcases")]
     (doall 
@@ -42,21 +29,17 @@
          (if (vector? (second tc))
            (is (some #(= res %) (second tc)))
            (is (= res (second tc)))))))))
+
+(deftest level1-test (level-test spec-examples "Level 1 Examples"))
+(deftest level2-test (level-test spec-examples "Level 2 Examples"))
+(deftest level3-test (level-test spec-examples "Level 3 Examples"))
+(deftest level4-test (level-test spec-examples "Level 4 Examples")) 
 
 (def extended-tests  (cheshire.core/parse-stream (clojure.java.io/reader "test/uritemplate_clj/extended-tests.json")))
 
-(deftest extended-test
-  (let
-      [level (extended-tests "Additional Examples 1")
-       vars (level "variables")
-       testcases (level "testcases")]
-    (doall 
-     (for [tc testcases] 
-       (let [res (uritemplate (first tc) vars)]
-         (println res)
-         (if (vector? (second tc))
-           (is (some #(= res %) (second tc)))
-           (is (= res (second tc)))))))))
+(deftest extended-test (level-test extended-tests "Additional Examples 1"))
+(deftest extended2-test (level-test extended-tests "Additional Examples 2"))
+(deftest extended3-test (level-test extended-tests "Additional Examples 3: Empty Variables"))
 
 (deftest additional-test
   (let

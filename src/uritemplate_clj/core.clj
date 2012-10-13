@@ -104,9 +104,8 @@
   (fn [token values]
     (:prefix token)))
 
-
-(defn- process-unnamed-token [token values separator first-char encoding-fn]
-   (let
+(defn- process-token [token values separator first-char encoding-fn list-generator]
+  (let
        [res
         (filter
          (fn [r] (not (empty? r)))
@@ -114,15 +113,21 @@
           #(let
                [res (handle-value % values separator encoding-fn)]         
              (cs/join separator
-                      (cond
-                       (coll? res) res 
-                       (nil? res) nil
-                       :else (list res))))
+                      (list-generator % values res)))
           (:variables token)))]
      (if (not (empty? res))
        (str
         first-char
         (cs/join separator res)))))
+
+(defn- unnamed-list-generator [var values r]
+  (cond
+   (coll? r) r 
+   (nil? r) nil
+   :else (list r)) )
+
+(defn- process-unnamed-token [token values separator first-char encoding-fn]
+  (process-token token values separator first-char encoding-fn unnamed-list-generator))
 
 (defmethod handle-token "." [token values]
   "Label expansion, dot-prefixed, cf. 3.2.5"
@@ -143,42 +148,16 @@
 (defn- build-= [variable values r] 
   (str (if (and (map? (values (:text variable))) (= (:postfix variable) "*")) "" (str (:text variable) "=")) r))
 
-(defn- process-named-token [token values separator first-char]
-   (let
-       [res
-        (filter
-         (fn [r] (not (empty? r)))
-         (map 
-          #(let
-               [res (handle-value % values separator full-encode)]         
-             (cs/join separator
-                      (map (fn[r] (build-= % values r))
-                           (cond
-                            (coll? res) res 
-                            (nil? res) nil
-                            :else (list res)))))
-          (:variables token)))]
-     (if (not (empty? res))
-       (str
-        first-char
-        (cs/join separator res)))))
- ;; (str
- ;;   first-char
- ;;   (cs/join separator
- ;;            (filter
- ;;             (fn [r] (not (empty? r)))
- ;;             (map 
- ;;              #(let
- ;;                   [res (handle-value % values separator full-encode)]         
- ;;                 (cs/join separator
- ;;                          (map 
- ;;                           (fn [r] (build-= % values r))
- ;;                           (cond
- ;;                            (coll? res) res 
- ;;                            (nil? res) nil
- ;;                            :else (list res)))))
- ;;             (:variables token))))))
+(defn- named-list-generator [var values r]
+  (map (fn[r] (build-= var values r))
+       (cond
+        (coll? r) r 
+        (nil? r) nil
+        :else (list r)) ))
 
+
+(defn- process-named-token [token values separator first-char]
+  (process-token token values separator first-char full-encode named-list-generator))
 
 (defmethod handle-token "?" [token values]
   "Form-style query, ampersand-separated"
