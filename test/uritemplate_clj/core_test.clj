@@ -4,11 +4,11 @@
         cheshire.core))
 
 (deftest parse-token-test
-  (is (= (parse-token "{var}") (->Token  "var" nil)))
-  (is (= (parse-token "{/var}") (->Token "var" "/")))
-  (is (= (parse-token "{/var:3}") (->Token "var:3" "/" )))
-  (is (= (parse-token "{#var*}") (->Token "var*" "#")))
-  (is (= (parse-token "{+var:7}") (->Token "var:7" "+"))))
+  (is (= (parse-token "{var}") (->Token  (list (->Variable "var" nil)) nil)))
+  (is (= (parse-token "{/var}") (->Token (list (->Variable "var" nil)) "/")))
+  (is (= (parse-token "{/var:3,var*}") (->Token (list (->Variable "var" ":3") (->Variable "var" "*")) "/" )))
+  (is (= (parse-token "{#var*}") (->Token (list (->Variable "var" "*")) "#")))
+  (is (= (parse-token "{+var:7}") (->Token (list (->Variable "var" ":7")) "+"))))
 
 (deftest parse-variable-test
   (is (= (parse-variable "var:5") (->Variable  "var" ":5")))
@@ -23,7 +23,6 @@
       [level (spec-examples selection)
        vars (level "variables")
        testcases (level "testcases")]
-    (println selection)
     (doall 
      (for [tc testcases] 
        (is (= (uritemplate (first tc) vars) (second tc)))))))
@@ -47,7 +46,7 @@
 (deftest additional-test
   (let
       [template1 "abc{/type}{/agent*}{/year}{/natural_identifier,version,language}"
-       template2 "abc{/type}/{,agent*}{/year}{/natural_identifier,version,language}"
+       template2 "abc{/type}/{agent*}{/year}{/natural_identifier,version,language}"
        values1 {"type" "dir", 
                "agent"  ["ep" "consil"], 
                "year"  "2003",

@@ -1,5 +1,6 @@
 (ns uritemplate-clj.core
-  (:require [ring.util.codec :as codec]))
+  (:require [ring.util.codec :as codec]
+            [clojure.string :as cs]))
 
 ;Author: Marc Wilhelm Kuester
 ;Code releazed under the Eclipse Public License
@@ -16,19 +17,22 @@
    (map (fn[c] 
           (if (>= (.indexOf special-chars (int c)) 0) c (codec/url-encode c))) s)))
 
-(defrecord Token [text prefix])
-
-(defn parse-token ^Token [token]
-  (let
-      [parts (re-find #"\{([\.#+/\.;\?\&])?([a-zA-Z0-9,_\*:]+)\}" token)]
-    (->Token (nth parts 2) (nth parts 1))))
-
 (defrecord Variable [text postfix])
 
 (defn parse-variable ^Variable [variable]
   (let
       [parts (re-find #"([a-zA-Z0-9,_]+)(\*|:\d+)?" variable)]
     (->Variable (nth parts 1) (nth parts 2))))
+
+(defrecord Token [variables prefix])
+
+(defn parse-token ^Token [token]
+  (let
+      [parts (re-find #"\{([\.#+/\.;\?\&])?([a-zA-Z0-9,_\*:]+)\}" token)]
+   
+    (->Token (map parse-variable (clojure.string/split (nth parts 2) #",")) (nth parts 1))))
+
+
 
 (defmulti handle-value 
   (fn [^Variable variable values separator encoding-fn]
@@ -48,18 +52,26 @@
 
 (defmethod handle-value java.util.Collection [^Variable variable values separator encoding-fn]
   ;(println "Print collection")
-  (clojure.string/join 
-     (if (= (:postfix variable) "*")
-       separator 
-       ",") (map encoding-fn (values (:text variable)))))
+  (if (= (:postfix variable) "*")
+    (map encoding-fn (values (:text variable)))
+    (cs/join "," (map encoding-fn (values (:text variable))))))
 
 
 (defmethod handle-value clojure.lang.IPersistentMap [^Variable variable values separator encoding-fn]
   ;(println "Print map")
-  (clojure.string/join 
-   ","  
-   (map full-encode (mapcat identity (values (:text variable))))))
-
+  (if (= (:postfix variable) "*")
+    (cs/join 
+     (cond
+      (= separator "/") "/"
+      (= separator "&") "&"
+      (= separator ";") ";"
+      :else ",")
+     (map #(str 
+            (first %)
+            "="
+            (encoding-fn (second %)))  (values (:text variable))))
+    (cs/join "," (map encoding-fn (mapcat identity (values (:text variable)))))))
+  
 (defmethod handle-value nil [variable values separator encoding-fn] nil)
 
 (defmethod handle-value :default [variable values separator encoding-fn]
@@ -67,77 +79,132 @@
   (println variable)
   (println values)
   (println separator)
-  "abc")
+  "error-case")
 
-(defn split-variables [variable values separator encoding-fn]
-  (let
-      [res (filter string?
-                   (map
-                    #(handle-value (parse-variable %) values separator encoding-fn)
-                    (clojure.string/split
-                     (:text variable) #",")))]
-    (if (not (empty? res))
-      (clojure.string/join separator res))))
+(defn handle-variables 
+  ([token values separator] (handle-variables token values separator partial-encode))
+  ([token values separator encoding-fn ]
+     (let
+         [res (filter string?
+                      (map
+                       #(handle-value % values separator encoding-fn)
+                       (:variables token)))]
+       (if (not (empty? res))
+         (clojure.string/join separator res)))))
 
-
-(defn split-variables-with-vars [variable values separator]
-  (clojure.string/join 
-   separator
-   (filter string?
-     (map 
-      #(let 
-            [var (parse-variable %)]
-         (clojure.string/join "="
-          (list
-           (:text var)
-           (handle-value var values separator partial-encode))))
-      (clojure.string/split
-       (:text variable) #",")))))
 
 (defmulti handle-token 
-  (fn [variable values]
-    (:prefix variable)))
+  (fn [token values]
+    (:prefix token)))
 
-(defmethod handle-token "#" [variable values]
+(defmethod handle-token "#" [token values]
   "Fragment expansion with multiple variables"
-  (str "#"  (split-variables variable values "," partial-encode)))
+  (let
+      [s
+       (filter #(not (empty? %))
+               (map 
+                #(let
+                     [res (handle-value % values "#" partial-encode)]         
+                   (cs/join "," (if (string? res) (list res) res)))
+                (:variables token)))]
+    (if (not (empty? s))
+      (str "#" (cs/join "," s)))))
 
-(defmethod handle-token "/" [variable values]
+
+(defmethod handle-token "/" [token values]
   "Path segments, slash-prefixed, cf. 3.2.6"
   (let
-      [res (split-variables variable values "/" full-encode)]
-    (if res
-      (str "/" res))))
+      [s
+       (filter #(not (empty? %))
+               (map 
+                #(let
+                     [res (handle-value % values "/" full-encode)]         
+                   (cs/join "/" (if (string? res) (list res) res)))
+                (:variables token)))]
+    (if (not (empty? s))
+      (str "/" (cs/join "/" s)))))
 
-(defmethod handle-token "." [variable values]
+
+(defmethod handle-token "." [token values]
   "Label expansion, dot-prefixed, cf. 3.2.5"
   (let
-      [res (split-variables variable values "." full-encode)]
-    (if res
-      (str "." res))))
+      [s
+       (filter #(not (empty? %))
+               (map 
+                #(let
+                     [res (handle-value % values "." full-encode)]         
+                   (cs/join "." (if (string? res) (list res) res)))
+                (:variables token)))]
+    (if (not (empty? s))
+      (str "." (cs/join "." s)))))
 
-(defmethod handle-token "+" [variable values]
+
+(defmethod handle-token "+" [token values]
   "Reserved string expansion does not convert (cf. 1.5): "
-  (split-variables variable values "," partial-encode))
+  (let
+      [s
+       (filter #(not (empty? %))
+               (map 
+                #(let
+                     [res (handle-value % values "." partial-encode)]         
+                   (cs/join "," (if (string? res) (list res) res)))
+                (:variables token)))]
+    (if (not (empty? s))
+      (cs/join "," s))))
 
-(defmethod handle-token "?" [variable values]
+(defn- build-= [variable values r] 
+  (str (if (and (map? (values (:text variable))) (= (:postfix variable) "*")) "" (str (:text variable) "=")) r))
+
+(defmethod handle-token "?" [token values]
   "Form-style query, ampersand-separated"
-  (str "?" (split-variables-with-vars variable values "&")))
+  (str
+   "?"
+   (cs/join "&"
+    (map 
+     #(let
+          [res (handle-value % values "&" full-encode)]         
+          (cs/join "&" (map (fn [r] (build-= % values r)) (if (string? res) (list res) res))))
+   (:variables token)))))
 
-(defmethod handle-token "&" [variable values]
+(defmethod handle-token "&" [token values]
   "Form-style query continuation"
-  (str "&" (split-variables-with-vars variable values "&")))
+  (str
+   "&"
+   (cs/join "&"
+    (map 
+     #(let
+          [res (handle-value % values "&" full-encode)]         
+          (cs/join "&" (map (fn [r] (build-= % values r)) (if (string? res) (list res) res))))
+   (:variables token)))))
 
-(defmethod handle-token ";" [variable values]
+
+(defmethod handle-token ";" [token values]
   "Path-style parameters, semicolon-prefixed"
   ;;Special rule in 3.2.7: if a variable is empty, no = should be appended. So ;x=1024;y=768;empty and not ;x=1024;y=768;empty=
-  ;hack
-  (clojure.string/replace 
-   (str ";" (split-variables-with-vars variable values ";")) #"=$|=;" ""))
+  ;hack 
+  (cs/replace
+   (str
+    ";"
+    (cs/join ";"
+             (map 
+              #(let
+                   [res (handle-value % values ";" full-encode)]         
+                 (cs/join ";" (map (fn [r] (build-= % values r))  (if (string? res) (list res) res))))
+              (:variables token)))) #"=$|=;" ""))
 
-(defmethod handle-token :default [variable values]
+(defmethod handle-token :default [token values]
   "Variable has no special modifier, so just apply simple string expansion"
-   (split-variables variable values "," full-encode))
+  (let
+      [s
+       (filter #(not (empty? %))
+               (map 
+                #(let
+                     [res (handle-value % values "." full-encode)]         
+                   (cs/join "," (if (string? res) (list res) res)))
+                (:variables token)))]
+    (if (not (empty? s))
+      (cs/join "," s))))
+;   (handle-variables token values "," full-encode))
 
 (defn tokenize [template]
   "Tokenize the template string, taken from https://bitbucket.org/dfa/uritemplate"
