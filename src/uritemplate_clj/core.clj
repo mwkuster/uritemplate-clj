@@ -184,7 +184,7 @@
   "Tokenize the template string, taken from https://bitbucket.org/dfa/uritemplate"
   (re-seq #"\{[^\{]+\}|[^{}]+" template)) 
 
-(defn uritemplate [template values]
+(defn uritemplate ^String [^String template ^clojure.lang.IPersistentMap values]
   "Take a URI template and a map of values and return the resulting URI"
   (clojure.string/join
    (map 
