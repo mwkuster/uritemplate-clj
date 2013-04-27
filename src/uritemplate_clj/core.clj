@@ -38,7 +38,6 @@
     (class (values (:text variable)))))
 
 (defmethod handle-value String [^Variable variable values separator encoding-fn]
-  ;(println "Print string")
   (encoding-fn 
    (if (= (first (:postfix variable)) \:)
      (let
@@ -50,14 +49,12 @@
      (values (:text variable)))))
 
 (defmethod handle-value java.util.Collection [^Variable variable values separator encoding-fn]
-  ;(println "Print collection")
   (if (= (:postfix variable) "*")
     (map encoding-fn (values (:text variable)))
     (cs/join "," (map encoding-fn (values (:text variable))))))
 
 
 (defmethod handle-value clojure.lang.IPersistentMap [^Variable variable values separator encoding-fn]
-  ;(println "Print map")
   (if (= (:postfix variable) "*")
     (cs/join 
      (cond
@@ -180,7 +177,7 @@
   (process-unnamed-token token values "," "" full-encode))
 
 
-(defn- tokenize [template]
+(defn tokenize [template]
   "Tokenize the template string, taken from https://bitbucket.org/dfa/uritemplate"
   (re-seq #"\{[^\{]+\}|[^{}]+" template)) 
 

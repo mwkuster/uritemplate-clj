@@ -70,4 +70,18 @@
     (is (= (uritemplate template1 values3) "abc/dir/2003/98/R3/SPA"))
     (is (= (uritemplate template1 values4) "abc/dir/ep/consil/2003/98/SPA"))
     (is (= (uritemplate template2 values4) "abc/dir/ep,consil/2003/98/SPA"))))
+
+(deftest ambiguous-template-level3-test
+  (let
+      [ambiguous-template "/foo{/ba,bar}{/baz,bay}"
+       values1 {"ba" "x", "bar" "y", "baz" "z"}
+       values2 {"ba" "x", "baz" "y", "bay" "z"}]
+    (is (= (uritemplate ambiguous-template values1) (uritemplate ambiguous-template values2)))))
+
+(deftest ambiguous-template-level4-test
+  (let
+      [ambiguous-template "/foo{/ba*}{/baz,bay}"
+       values1 {"ba" '("x" "y"), "baz" "z"}
+       values2 {"ba" "x", "baz" "y", "bay" "z"}]
+    (is (= (uritemplate ambiguous-template values1) (uritemplate ambiguous-template values2)))))
     
