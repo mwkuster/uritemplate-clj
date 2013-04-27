@@ -82,6 +82,8 @@
   (let
       [ambiguous-template "/foo{/ba*}{/baz,bay}"
        values1 {"ba" '("x" "y"), "baz" "z"}
-       values2 {"ba" "x", "baz" "y", "bay" "z"}]
-    (is (= (uritemplate ambiguous-template values1) (uritemplate ambiguous-template values2)))))
+       values2 {"ba" "x", "baz" "y", "bay" "z"}
+       ambiguous-template-level1 "/foo{hello}{world}"]
+    (is (= (uritemplate ambiguous-template values1) (uritemplate ambiguous-template values2)))
+    (is (= (uritemplate ambiguous-template-level1 {"hello" "hello", "world" "world"}) "/foohelloworld"))))
     
