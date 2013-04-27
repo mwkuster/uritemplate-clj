@@ -29,12 +29,10 @@
       nil
       nil)))
 
-
-
 (defn match-variables [^String template ^String uri]
   "Find all the parses a given uri can have against a URI template. Return this as a set of maps (possibly empty)"
   (let
       [tokens (tokenize template)]
-    (match-token tokens uri)
+    ;(match-token tokens uri)
    #{}
   ))
