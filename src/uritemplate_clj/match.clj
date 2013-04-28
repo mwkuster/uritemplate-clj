@@ -30,9 +30,9 @@
 
 (defmethod match-token \{ [current-token remaining-tokens ^String rest-uri result-map]
   "Match a token containing a variable"
-  (println "current-token (var):" current-token)
-  (println "rest-uri (var):" rest-uri)
-  (println "result-map (var):" result-map)
+  ;(println "current-token (var):" current-token)
+  ;(println "rest-uri (var):" rest-uri)
+  ;(println "result-map (var):" result-map)
   (let
       [tok (parse-token current-token)]
     (cond
@@ -54,16 +54,16 @@
 
 (defmethod match-token nil [current-token remaining-tokens ^String rest-uri result-map]
   "Match an empty current-token --> the parsing is over"
-  (println "nil")
+  ;(println "nil")
   (if (empty? rest-uri)
     result-map ; return the result-map only if the URI has been fully consumed, otherwise there is no hit
     {}))
 
 (defmethod match-token :default  [current-token remaining-tokens ^String rest-uri result-map]
   "Match a constant token"
-  (println "current-token (s):" current-token)
-  (println "rest-uri (s):" rest-uri)
-  (println "result-map (s):" result-map)
+  ;(println "current-token (s):" current-token)
+  ;(println "rest-uri (s):" rest-uri)
+  ;(println "result-map (s):" result-map)
   (if (.startsWith rest-uri current-token)
     (match-token (first remaining-tokens) (rest remaining-tokens) (subs rest-uri (count current-token)) result-map)
     {}))
@@ -80,3 +80,25 @@
   (if (empty? (match-variables template uri))
     false
     true))
+
+(defn fill-with-nulls [^String template]
+  "Create a version of the template with all variables set to ASCII
+NULL (= %00 in the URI). This is considered the canonical URI
+representation of the template"
+  (let
+      [tokens (map parse-token (filter #(= (first %) \{) (tokenize (cs/lower-case template))))
+       all-vars (map :text (mapcat :variables tokens))
+       var-map  (zipmap all-vars (repeat (count all-vars) "\u0000"))]
+    (uritemplate template var-map)))
+
+(defn uritemplate-compare [^String template ^String uri]
+  "A URI comparison function along the lines suggested in
+https://github.com/mwkuster/uritemplate-clj/issues/1#issuecomment-17117448
+Returns 0 if the uri matches the template, -1 if the template give a
+canonicial form is less than the URI in terms of string comparison, +1
+if it is more"
+  (if 
+      (matches? template uri) 0
+      (compare (fill-with-nulls template) uri)))
+  
+    

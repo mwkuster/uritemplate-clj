@@ -57,3 +57,12 @@
     (is (matches? template uri1))
     (is (not (matches? template uri2)))
     (is (not (matches? template uri3)))))
+
+(deftest fill-with-nulls-test
+  (let
+      [template "http://www.example.org/bla/{var}/{hello}"
+       template2 "http://www.example.org/bla/{var}/z/{hello}"
+       template3 "/foo{/ba,bar}{/baz,bay}"]
+    (is (= (fill-with-nulls template) "http://www.example.org/bla/%00/%00"))
+    (is (= (fill-with-nulls template2) "http://www.example.org/bla/%00/z/%00"))
+    (is (= (fill-with-nulls template3) "/foo/%00/%00/%00/%00"))))
