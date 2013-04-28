@@ -29,30 +29,53 @@
       nil
       nil)))
 
+(defmulti match-token
+  "Match of an individual token"
+  (fn [current-token remaining-tokens ^String rest-uri result-map]
+    (if (string? current-token)
+      (first current-token)
+      nil)))
 
-(defn match-token [token-list ^String partial-uri & vars]
-  "Try to match an element of a token list against a partial uri"
-  (println "token-list:" token-list)
-  (println "partial-uri:" partial-uri)
-  (println "vars:" vars)
+(defmethod match-token \{ [current-token remaining-tokens ^String rest-uri result-map]
+  "Match a token containing a variable"
+  (println "current-token (var):" current-token)
+  (println "rest-uri (var):" rest-uri)
+  (println "result-map (var):" result-map)
   (let
-      [token (first token-list)]
-    (if (empty? token-list)
-      vars
-      (if (= \{ (first token))
-        (let
-            [tok (parse-token token)
-             uri-fragments (re-seq #"[/]?([^/]+)/(.*)" partial-uri)
-             first-fragment (first uri-fragments)]
-          (println "uri-fragments:!" uri-fragments "!")
-          (println "first-fragment:!" first-fragment "!")
-          (match-token (rest token-list) (second(conj vars first-fragment) ))
-        (match-token (rest token-list) (cs/replace-first partial-uri token "") vars))))))
-  
+      [tok (parse-token current-token)]
+    (if (:prefix tok) 
+      {} ; can't do that yet
+      (let
+          [var (re-find #"^[a-zA-Z0-9\.%,_]+" rest-uri)] 
+                                        ;this assumes that we can always parse up to the next separator. 
+                                        ;Without this assumtion no meaningful parsing seems possible
+        (if var
+          (match-token  
+           (first remaining-tokens) 
+           (rest remaining-tokens) 
+           (subs rest-uri (count var))
+           (assoc result-map (:text (first (:variables tok))) var))
+          {})))))
+
+(defmethod match-token nil [current-token remaining-tokens ^String rest-uri result-map]
+  "Match an empty current-token --> the parsing is over"
+  (println "nil")
+  (if (empty? rest-uri)
+    result-map ; return the result-map only if the URI has been fully consumed, otherwise there is no hit
+    {}))
+
+(defmethod match-token :default  [current-token remaining-tokens ^String rest-uri result-map]
+  "Match a constant token"
+  (println "current-token (s):" current-token)
+  (println "rest-uri (s):" rest-uri)
+  (println "result-map (s):" result-map)
+  (if (.startsWith rest-uri current-token)
+    (match-token (first remaining-tokens) (rest remaining-tokens) (subs rest-uri (count current-token)) result-map)
+    {}))
+
 (defn match-variables [^String template ^String uri]
   "Find all the parses a given uri can have against a URI template. Return this as a set of maps (possibly empty)"
   (let
-      [tokens (tokenize template)]
-    (match-token tokens uri)
-   #{}
-  ))
+      [tokens (tokenize (cs/lower-case template))]
+    (set
+     (match-token (first tokens) (rest tokens) (cs/lower-case uri) {}))))
