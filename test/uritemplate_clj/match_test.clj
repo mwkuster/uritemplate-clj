@@ -10,10 +10,13 @@
        uri1 "http://www.example.org/bla/v/h"
        uri2 "http://www.example.org/bla/v"
        uri3 "http://www.example.org/bla/v/h/z"
-       values {"var" "v", "hello" "h"}]
-    (is (= (match-variables template uri1) (set (list values))))
+       values {"var" "v", "hello" "h"}
+       uri4 "http://www.example.org/bla/v/h%20w"
+       values2 {"var" "v", "hello" "h w"}]
+    (is (= (match-variables template uri1) (set values)))
     (is (= (match-variables template uri2) #{}))
-    (is (= (match-variables template uri3) #{}))))
+    (is (= (match-variables template uri3) #{}))
+    (is (= (match-variables template uri4) (set values2)))))
 
 (deftest ambiguous-level3-parses-test 
   (let

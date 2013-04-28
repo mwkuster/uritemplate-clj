@@ -49,7 +49,7 @@
            (first remaining-tokens) 
            (rest remaining-tokens) 
            (subs rest-uri (count var))
-           (assoc result-map (:text (first (:variables tok))) var))
+           (assoc result-map (:text (first (:variables tok))) (codec/url-decode var)))
           {})))))
 
 (defmethod match-token nil [current-token remaining-tokens ^String rest-uri result-map]
