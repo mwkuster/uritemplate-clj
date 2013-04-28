@@ -43,3 +43,14 @@
     (is (= (find-constant-parts (tokenize template2) uri2)  '( (0, 27) (28 31))))
     (is (= (find-constant-parts (tokenize template3) uri3) '( (0, 27) (28 31) (32 34))))
     (is (= (find-constant-parts (tokenize template4) uri4) nil))))
+
+(deftest matches?-test
+  (let
+      [template "http://www.example.org/bla/{var}/{hello}"
+       uri1 "http://www.example.org/bla/v/h"
+       uri2 "http://www.example.org/bla/v"
+       uri3 "http://www.example.org/bla/v/h/z"
+       values {"var" "v", "hello" "h"}]
+    (is (matches? template uri1))
+    (is (not (matches? template uri2)))
+    (is (not (matches? template uri3)))))

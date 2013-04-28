@@ -79,3 +79,9 @@
       [tokens (tokenize (cs/lower-case template))]
     (set
      (match-token (first tokens) (rest tokens) (cs/lower-case uri) {}))))
+
+(defn matches? [^String template ^String uri]
+  "Indicates if a given URI has at least one match against a URI template"
+  (if (empty? (match-variables template uri))
+    false
+    true))
