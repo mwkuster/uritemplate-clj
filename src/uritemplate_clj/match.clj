@@ -21,14 +21,6 @@
              nil ;some constant token cannot be matched against the URI -> there is no hit
              ))))))
 
-(defn find-variable-parts [token-list ^String uri]
-  "Find the parts of a URI corresponding to the variable parts of a URI template and return those as a list of strings"
-  (let
-      [constant-parts (find-constant-parts token-list uri)]
-    (if constant-parts
-      nil
-      nil)))
-
 (defmulti match-token
   "Match of an individual token"
   (fn [current-token remaining-tokens ^String rest-uri result-map]
@@ -48,7 +40,8 @@
       (let
           [var (re-find #"^[a-zA-Z0-9\.%,_]+" rest-uri)] 
                                         ;this assumes that we can always parse up to the next separator. 
-                                        ;Without this assumtion no meaningful parsing seems possible
+                                        ;Without this assumption no meaningful parsing seems possible
+                                        ;Inded, templates of type /foo{hello}{world} are a class of non-decidable URI templates
         (if var
           (match-token  
            (first remaining-tokens) 
