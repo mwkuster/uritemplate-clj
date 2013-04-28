@@ -29,10 +29,30 @@
       nil
       nil)))
 
+
+(defn match-token [token-list ^String partial-uri & vars]
+  "Try to match an element of a token list against a partial uri"
+  (println "token-list:" token-list)
+  (println "partial-uri:" partial-uri)
+  (println "vars:" vars)
+  (let
+      [token (first token-list)]
+    (if (empty? token-list)
+      vars
+      (if (= \{ (first token))
+        (let
+            [tok (parse-token token)
+             uri-fragments (re-seq #"[/]?([^/]+)/(.*)" partial-uri)
+             first-fragment (first uri-fragments)]
+          (println "uri-fragments:!" uri-fragments "!")
+          (println "first-fragment:!" first-fragment "!")
+          (match-token (rest token-list) (second(conj vars first-fragment) ))
+        (match-token (rest token-list) (cs/replace-first partial-uri token "") vars))))))
+  
 (defn match-variables [^String template ^String uri]
   "Find all the parses a given uri can have against a URI template. Return this as a set of maps (possibly empty)"
   (let
       [tokens (tokenize template)]
-    ;(match-token tokens uri)
+    (match-token tokens uri)
    #{}
   ))
