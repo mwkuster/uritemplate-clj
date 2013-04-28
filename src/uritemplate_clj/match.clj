@@ -35,8 +35,10 @@
   (println "result-map (var):" result-map)
   (let
       [tok (parse-token current-token)]
-    (if (:prefix tok) 
-      {} ; can't do that yet
+    (cond
+      (:prefix tok) {} ; can't do that yet
+      (not (= (count (:variables tok)) 1)) {} ; can't do that yet
+      :else
       (let
           [var (re-find #"^[a-zA-Z0-9\.%,_]+" rest-uri)] 
                                         ;this assumes that we can always parse up to the next separator. 
