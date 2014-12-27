@@ -35,6 +35,16 @@
 (deftest level3-test (level-test spec-examples "Level 3 Examples"))
 (deftest level4-test (level-test spec-examples "Level 4 Examples")) 
 
+; test in response of https://github.com/mwkuster/uritemplate-clj/issues/2
+(deftest query-param-encoding
+  (let
+      [temp "{/hello}{?qparam}"
+       hello "Hello+ World!"
+       qparam "50+%"
+       res (uritemplate temp {"hello" hello, "qparam" qparam})]
+    (is (= res "/Hello+%20World%21?qparam=50%2B%25"))))
+    
+
 (def extended-tests  (cheshire.core/parse-stream (clojure.java.io/reader "test/uritemplate_clj/extended-tests.json")))
 
 (deftest extended-test (level-test extended-tests "Additional Examples 1"))

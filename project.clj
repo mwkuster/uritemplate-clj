@@ -1,9 +1,9 @@
-(defproject uritemplate-clj "1.1.0"
+(defproject uritemplate-clj "1.1.1"
   :description "Clojure implementation of URI Templates as specified in RFC 6570 (http://tools.ietf.org/html/rfc6570), level 4 compliant"
   :url "https://github.com/mwkuster/uritemplate-clj"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"
             :comment "Author: Marc Wilhelm Küster"}
-  :dependencies [[org.clojure/clojure "1.5.1"]
-                 [cheshire "5.1.1"]
-                 [ring "1.1.8" :exclusions [org.clojure/clojure]]])
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [cheshire "5.4.0"]
+                 [ring "1.3.2" :exclusions [org.clojure/clojure]]])

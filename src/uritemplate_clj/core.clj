@@ -12,6 +12,11 @@
     (codec/url-encode s)
     ""))
 
+(defn form-encode [^String s]
+  (if s
+    (codec/form-encode s)
+    ""))
+
 (defn partial-encode [^String s]
   (clojure.string/join 
    (map (fn[c] 
@@ -154,7 +159,9 @@
 
 
 (defn- process-named-token [token values separator first-char]
-  (process-token token values separator first-char full-encode named-list-generator))
+  (if (= separator "&")
+    (process-token token values separator first-char form-encode named-list-generator)
+    (process-token token values separator first-char full-encode named-list-generator)))
 
 (defmethod handle-token "?" [token values]
   "Form-style query, ampersand-separated"

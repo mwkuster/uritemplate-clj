@@ -18,3 +18,13 @@ test=> (templ/uritemplate "http://example.org/abc{/type}{/agent*}{/year}{/natura
 "http://example.org/abc/dir/ep/consil/2003/98"
 test=> 
 ```
+
+## Usage
+
+```clojure
+[uritemplate-clj "1.1.1"]
+
+;; In your ns statement:
+(ns my.ns
+  (:require [uritemplate-clj.core)
+```
