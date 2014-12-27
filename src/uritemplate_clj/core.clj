@@ -14,7 +14,7 @@
 
 (defn form-encode [^String s]
   (if s
-    (codec/form-encode s)
+    (cs/replace (codec/form-encode s) #"\+" "%20")
     ""))
 
 (defn partial-encode [^String s]
