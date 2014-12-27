@@ -30,14 +30,30 @@
 
 (defmethod match-token \{ [current-token remaining-tokens ^String rest-uri result-map]
   "Match a token containing a variable"
-  ;(println "current-token (var):" current-token)
-  ;(println "rest-uri (var):" rest-uri)
-  ;(println "result-map (var):" result-map)
+  ;; (println "current-token (var):" current-token)
+  ;; (println "rest-uri (var):" rest-uri)
+  ;; (println "result-map (var):" result-map)
   (let
       [tok (parse-token current-token)]
     (cond
-      (:prefix tok) {} ; can't do that yet
-      (not (= (count (:variables tok)) 1)) {} ; can't do that yet
+     (:prefix tok)
+     ;; For ambiguous level 3 parses the algorithm starts to produce possible combinations of tokens that could be matched
+     ;; For example, {/a,b} is expanded to the tokens "/" {a} and "/" {a} "/" {b}
+     ;; The resulting templates are then reparsed from the possible-path variable and handled as one possible URI template that could be matched
+     (let
+         [res 
+          (for
+              [cnt (range (count (:variables tok)))]
+            (let
+                [vars (take (+ cnt 1) (:variables tok))
+                 possible-path (cs/join (:prefix tok) (map #(cs/join (list "{" (:text %) "}")) vars))]
+              ;(println possible-path cnt)
+              (match-token
+               (:prefix tok)
+               (concat (tokenize possible-path) remaining-tokens)
+               rest-uri result-map)))]
+       (filter not-empty (flatten res)))
+     (not (= (count (:variables tok)) 1)) {} ; error case
       :else
       (let
           [var (re-find #"^[a-zA-Z0-9\.%,_]+" rest-uri)] 
@@ -67,6 +83,7 @@
   (if (.startsWith rest-uri current-token)
     (match-token (first remaining-tokens) (rest remaining-tokens) (subs rest-uri (count current-token)) result-map)
     {}))
+
 
 (defn match-variables [^String template ^String uri]
   "Find all the parses a given uri can have against a URI template. Return this as a set of maps (possibly empty)"

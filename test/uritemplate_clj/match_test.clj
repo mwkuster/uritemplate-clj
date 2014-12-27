@@ -25,12 +25,13 @@
        values2 {"ba" "x", "baz" "y", "bay" "z"}]
     (is (= (match-variables ambiguous-template "/foo/x/y/z") (set (list values1 values2))))))
 
-(deftest ambiguous-level4-parses-test 
-  (let
-      [ambiguous-template "/foo{/ba*}{/baz,bay}"
-       values1 {"ba" '("x" "y"), "baz" "z"}
-       values2 {"ba" "x", "baz" "y", "bay" "z"}]
-    (is (= (match-variables ambiguous-template "/foo/x/y/z") (set (list values1 values2))))))
+;; The additional value to handle highly ambiguous level4 parses seems unjustified for the associated complexity
+;; (deftest ambiguous-level4-parses-test 
+;;   (let
+;;       [ambiguous-template "/foo{/ba*}{/baz,bay}"
+;;        values1 {"ba" '("x" "y"), "baz" "z"}
+;;        values2 {"ba" "x", "baz" "y", "bay" "z"}]
+;;     (is (= (match-variables ambiguous-template "/foo/x/y/z") (set (list values1 values2))))))
 
 (deftest find-constant-parts-test
   (let
