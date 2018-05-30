@@ -80,6 +80,8 @@
 
 (defmethod handle-value Number [variable values separator encoding-fn] (values (:text variable)))
 
+(defmethod handle-value java.util.UUID [variable values separator encoding-fn]
+  (-> values (get (:text variable)) str))
 
 (defmethod handle-value :default [variable values separator encoding-fn]
   (println "default handle value")
