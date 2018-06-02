@@ -28,3 +28,5 @@ test=>
 (ns my.ns
   (:require [uritemplate-clj.core)
 ```
+## On Clojars
+[![Clojars Project](https://img.shields.io/clojars/v/uritemplate-clj.svg)](https://clojars.org/uritemplate-clj)
