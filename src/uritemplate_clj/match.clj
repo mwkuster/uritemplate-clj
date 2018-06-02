@@ -113,9 +113,14 @@ representation of the template"
 https://github.com/mwkuster/uritemplate-clj/issues/1#issuecomment-17117448
 Returns 0 if the uri matches the template, -1 if the template give a
 canonicial form is less than the URI in terms of string comparison, +1
-if it is more"
+if it is more. It assumes that all values are filled with ASCII %00 for comparision (canonical URI representation of the template)"
   (if 
       (matches? template uri) 0
-      (compare (fill-with-nulls template) uri)))
+      (let
+          [comparison-result (compare uri (fill-with-nulls template))]
+        (cond
+          (< comparison-result 0) -1
+          (> comparison-result 0) 1
+          (= comparison-result 0) 0))))
   
     

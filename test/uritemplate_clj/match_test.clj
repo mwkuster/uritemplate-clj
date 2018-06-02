@@ -67,3 +67,11 @@
     (is (= (fill-with-nulls template) "http://www.example.org/bla/%00/%00"))
     (is (= (fill-with-nulls template2) "http://www.example.org/bla/%00/z/%00"))
     (is (= (fill-with-nulls template3) "/foo/%00/%00/%00/%00"))))
+
+
+(deftest uritemplate-compare-test
+  (let
+      [template "http://example.org/abc{/type}{/agent}{/year}{/natural_identifier,version,language}"]
+    (is (= (uritemplate-compare template "http://example.org/abc/dir/ep/consil/2003/98") 0))
+    (is (= (uritemplate-compare template "http://example.org/abcd/dir/ep/consil/2003/98") 1))
+    (is (= (uritemplate-compare template "http://example.org/abb/dir/ep/consil/2003/98") -1))))
