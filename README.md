@@ -53,7 +53,7 @@ test=> (match/uritemplate-compare "http://example.org/abc{/type}{/agent}{/year}{
 ## Usage
 
 ```clojure
-[uritemplate-clj "1.1.1"]
+[uritemplate-clj "1.2.2"]
 
 ;; In your ns statement:
 (ns my.ns
