@@ -81,6 +81,35 @@
     (is (= (uritemplate template1 values4) "abc/dir/ep/consil/2003/98/SPA"))
     (is (= (uritemplate template2 values4) "abc/dir/ep,consil/2003/98/SPA"))))
 
+(deftest keyword-values-test
+  (let [template1 "abc{/type}{/agent*}{/year}{/natural_identifier,version,language}"
+        template2 "abc{/type}/{agent*}{/year}{/natural_identifier,version,language}"
+        values1 {:type "dir"
+                 :agent ["ep" "consil"]
+                 :year "2003"
+                 :natural_identifier "98"
+                 :version "R3"
+                 :language "SPA"}
+        values2 {:type "dir"
+                 :agent ["ep" "consil"]
+                 :year "2003"
+                 :natural_identifier "98"}
+        values3 {:type "dir"
+                 :year "2003"
+                 :natural_identifier "98"
+                 "version" "R3"
+                 :language "SPA"}
+        values4 {:type "dir"
+                 "agent" ["ep" "consil"]
+                 :year "2003"
+                 "natural_identifier" "98"
+                 :language "SPA"}]
+    (is (= (uritemplate template1 values1) "abc/dir/ep/consil/2003/98/R3/SPA"))
+    (is (= (uritemplate template1 values2) "abc/dir/ep/consil/2003/98"))
+    (is (= (uritemplate template1 values3) "abc/dir/2003/98/R3/SPA"))
+    (is (= (uritemplate template1 values4) "abc/dir/ep/consil/2003/98/SPA"))
+    (is (= (uritemplate template2 values4) "abc/dir/ep,consil/2003/98/SPA"))))
+
 (deftest ambiguous-template-level3-test
   (let
       [ambiguous-template "/foo{/ba,bar}{/baz,bay}"

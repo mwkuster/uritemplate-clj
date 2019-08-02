@@ -1,6 +1,7 @@
 (ns uritemplate-clj.core
   (:require [ring.util.codec :as codec]
-            [clojure.string :as cs]))
+            [clojure.string :as cs]
+            [clojure.walk :as walk]))
 
 ;Author: Marc Wilhelm Kuester
 ;Code releazed under the Eclipse Public License
@@ -192,10 +193,11 @@
 
 (defn uritemplate ^String [^String template ^clojure.lang.IPersistentMap values]
   "Take a URI template and a map of values and return the resulting URI"
-  (clojure.string/join
-   (map 
-    (fn [token]
-      (if (= \{ (first token))
-        (handle-token (parse-token token) values)
-        token))
-    (tokenize template))))
+  (let [stringly-values (walk/stringify-keys values)]
+    (clojure.string/join
+     (map
+      (fn [token]
+        (if (= \{ (first token))
+          (handle-token (parse-token token) stringly-values)
+          token))
+      (tokenize template)))))
