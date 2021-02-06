@@ -50,6 +50,8 @@
 (deftest extended-test (level-test extended-tests "Additional Examples 1"))
 (deftest extended2-test (level-test extended-tests "Additional Examples 2"))
 (deftest extended3-test (level-test extended-tests "Additional Examples 3: Empty Variables"))
+(deftest extended4-test (level-test extended-tests "Additional Examples 4: Numeric Keys"))
+(deftest extended5-test (level-test extended-tests "Additional Examples 5: Explode Combinations"))
 
 (deftest additional-test
   (let
