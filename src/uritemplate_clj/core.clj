@@ -6,7 +6,7 @@
 ;Author: Marc Wilhelm Kuester
 ;Code releazed under the Eclipse Public License
 
-(def ^String special-chars "/?#[]@!$&'()*+,;=")
+(def ^String special-chars "/?#[]@!$&'()*+,;=:")
 
 (defn full-encode [^String s]
   (if s
