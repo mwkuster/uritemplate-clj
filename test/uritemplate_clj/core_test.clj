@@ -130,3 +130,8 @@
   (is (= "http://localhost:3000/foo/36cf2ce0-5ee0-4b6b-817d-b094fe94a9e1"
          (uritemplate "http://localhost:3000/foo/{id}"
                       {"id" (java.util.UUID/fromString "36cf2ce0-5ee0-4b6b-817d-b094fe94a9e1")}))))
+
+(deftest not-encode-colon
+  ; issue reported in https://github.com/mwkuster/uritemplate-clj/issues/8
+  (is (= "http://example.com/home/index"
+         (uritemplate "{+base}index" {"base" "http://example.com/home/"}))))
