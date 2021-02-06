@@ -151,12 +151,15 @@
   (process-unnamed-token token values "," "" partial-encode))
 
 (defn- build-= [variable values r]
-  (str (if (and (map? (values (:text variable)))
-                (or
-                 (= (:postfix variable) "*")
-                 ; this a bit exotic rule specifies that empty maps are treated as undefined and no variable name is generated for form-style query expansion, cf. 3.2.8
-                 (empty? (values (:text variable)))))
-         ""
+  (str (cond
+         (and
+          (map? (values (:text variable)))
+          (= (:postfix variable) "*")) ""
+                                        ; this a bit exotic rule specifies that empty maps and lists are treated as undefined and no variable name is generated for form-style query expansion, cf. 3.2.8 and uritemplate-test
+         (and
+          (coll? (values (:text variable)))
+          (empty? (values (:text variable)))) ""
+         :else
          (str (:text variable) "=")) r))
 
 (defn- named-list-generator [var values r]
