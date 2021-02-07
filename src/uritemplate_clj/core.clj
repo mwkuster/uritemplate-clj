@@ -150,16 +150,24 @@
   "Reserved string expansion does not convert (cf. 1.5): "
   (process-unnamed-token token values "," "" partial-encode))
 
-(defn- build-= [variable values r] 
-  (str (if (and (map? (values (:text variable))) (= (:postfix variable) "*")) "" (str (:text variable) "=")) r))
+(defn- build-= [variable values r]
+  (str (cond
+         (and
+          (map? (values (:text variable)))
+          (= (:postfix variable) "*")) ""
+                                        ; this a bit exotic rule specifies that empty maps and lists are treated as undefined and no variable name is generated for form-style query expansion, cf. 3.2.8 and uritemplate-test
+         (and
+          (coll? (values (:text variable)))
+          (empty? (values (:text variable)))) ""
+         :else
+         (str (:text variable) "=")) r))
 
 (defn- named-list-generator [var values r]
   (map (fn[r] (build-= var values r))
        (cond
-        (coll? r) r 
-        (nil? r) nil
-        :else (list r)) ))
-
+         (coll? r) r 
+         (nil? r) nil
+         :else (list r)) ))
 
 (defn- process-named-token [token values separator first-char]
   (if (= separator "&")
