@@ -21,7 +21,14 @@
     (is (= (match-variables template uri4) (set values2)))
     (is (= (match-variables template uri5) (set values3)))))
 
-(deftest ambiguous-level3-parses-test 
+(deftest match-variables-is-case-sensitive
+  (let
+    [template "http://www.example.org/{streamId}/"
+     uri "http://www.example.org/6f56ae19-4032-4bb3-9c6f-1a0ce2fbd4c8/"
+     values {"streamId" "6f56ae19-4032-4bb3-9c6f-1a0ce2fbd4c8"}]
+    (is (= (match-variables template uri) (set values)))))
+
+(deftest ambiguous-level3-parses-test
   (let
       [ambiguous-template "/foo{/ba,bar}{/baz,bay}"
        values1 {"ba" "x", "bar" "y", "baz" "z"}
@@ -29,7 +36,7 @@
     (is (= (match-variables ambiguous-template "/foo/x/y/z") (set (list values1 values2))))))
 
 ;; The additional value to handle highly ambiguous level4 parses seems unjustified for the associated complexity
-;; (deftest ambiguous-level4-parses-test 
+;; (deftest ambiguous-level4-parses-test
 ;;   (let
 ;;       [ambiguous-template "/foo{/ba*}{/baz,bay}"
 ;;        values1 {"ba" '("x" "y"), "baz" "z"}
