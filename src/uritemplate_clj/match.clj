@@ -94,9 +94,8 @@
 
 (defn matches? [^String template ^String uri]
   "Indicates if a given URI has at least one match against a URI template"
-  (if (empty? (match-variables template uri))
-    false
-    true))
+   (or (not (empty? (match-variables template uri)))
+       (= template uri)))
 
 (defn fill-with-nulls [^String template]
   "Create a version of the template with all variables set to ASCII

@@ -69,6 +69,14 @@
     (is (not (matches? template uri2)))
     (is (not (matches? template uri3)))))
 
+(deftest matches?-with-no-template-vars-test
+  (let
+    [template "http://www.example.org/no-template-vars"
+     uri1 "http://www.example.org/no-template-vars"
+     uri2 "http://www.example.org/other"]
+    (is (matches? template uri1))
+    (is (not (matches? template uri2)))))
+
 (deftest fill-with-nulls-test
   (let
       [template "http://www.example.org/bla/{var}/{hello}"
