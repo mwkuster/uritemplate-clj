@@ -56,8 +56,8 @@
      (not (= (count (:variables tok)) 1)) {} ; error case
       :else
       (let
-          [var (re-find #"^[a-zA-Z0-9\.%,_]+" rest-uri)] 
-                                        ;this assumes that we can always parse up to the next separator. 
+          [var (re-find #"^[a-zA-Z0-9\.%,_-]+" rest-uri)]
+                                        ;this assumes that we can always parse up to the next separator.
                                         ;Without this assumption no meaningful parsing seems possible
                                         ;Inded, templates of type /foo{hello}{world} are a class of non-decidable URI templates
         (if var
