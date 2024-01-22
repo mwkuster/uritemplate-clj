@@ -4,7 +4,7 @@
         uritemplate-clj.match
         cheshire.core))
 
-(deftest simple-parses-test 
+(deftest simple-parses-test
   (let
       [template "http://www.example.org/bla/{var}/{hello}"
        uri1 "http://www.example.org/bla/v/h"
@@ -12,13 +12,23 @@
        uri3 "http://www.example.org/bla/v/h/z"
        values {"var" "v", "hello" "h"}
        uri4 "http://www.example.org/bla/v/h%20w"
-       values2 {"var" "v", "hello" "h w"}]
+       values2 {"var" "v", "hello" "h w"}
+       uri5 "http://www.example.org/bla/6f56ae19-4032-4bb3-9c6f-1a0ce2fbd4c8/example"
+       values3 {"var" "6f56ae19-4032-4bb3-9c6f-1a0ce2fbd4c8", "hello" "example"}]
     (is (= (match-variables template uri1) (set values)))
     (is (= (match-variables template uri2) #{}))
     (is (= (match-variables template uri3) #{}))
-    (is (= (match-variables template uri4) (set values2)))))
+    (is (= (match-variables template uri4) (set values2)))
+    (is (= (match-variables template uri5) (set values3)))))
 
-(deftest ambiguous-level3-parses-test 
+(deftest match-variables-is-case-sensitive
+  (let
+    [template "http://www.example.org/{streamId}/"
+     uri "http://www.example.org/6f56ae19-4032-4bb3-9c6f-1a0ce2fbd4c8/"
+     values {"streamId" "6f56ae19-4032-4bb3-9c6f-1a0ce2fbd4c8"}]
+    (is (= (match-variables template uri) (set values)))))
+
+(deftest ambiguous-level3-parses-test
   (let
       [ambiguous-template "/foo{/ba,bar}{/baz,bay}"
        values1 {"ba" "x", "bar" "y", "baz" "z"}
@@ -26,7 +36,7 @@
     (is (= (match-variables ambiguous-template "/foo/x/y/z") (set (list values1 values2))))))
 
 ;; The additional value to handle highly ambiguous level4 parses seems unjustified for the associated complexity
-;; (deftest ambiguous-level4-parses-test 
+;; (deftest ambiguous-level4-parses-test
 ;;   (let
 ;;       [ambiguous-template "/foo{/ba*}{/baz,bay}"
 ;;        values1 {"ba" '("x" "y"), "baz" "z"}
@@ -58,6 +68,14 @@
     (is (matches? template uri1))
     (is (not (matches? template uri2)))
     (is (not (matches? template uri3)))))
+
+(deftest matches?-with-no-template-vars-test
+  (let
+    [template "http://www.example.org/no-template-vars"
+     uri1 "http://www.example.org/no-template-vars"
+     uri2 "http://www.example.org/other"]
+    (is (matches? template uri1))
+    (is (not (matches? template uri2)))))
 
 (deftest fill-with-nulls-test
   (let
