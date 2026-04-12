@@ -1,6 +1,6 @@
 (ns uritemplate-clj.match
-  (:use uritemplate-clj.core)
-  (:require [ring.util.codec :as codec]
+  (:require [uritemplate-clj.core :refer [parse-token tokenize uritemplate]]
+            [ring.util.codec :as codec]
             [clojure.string :as cs]))
 
 (defn find-constant-parts
@@ -29,7 +29,7 @@
       nil)))
 
 (defmethod match-token \{ [current-token remaining-tokens ^String rest-uri result-map]
-  "Match a token containing a variable"
+  ;; Match a token containing a variable
   ;; (println "current-token (var):" current-token)
   ;; (println "rest-uri (var):" rest-uri)
   ;; (println "result-map (var):" result-map)
@@ -69,14 +69,14 @@
           {})))))
 
 (defmethod match-token nil [current-token remaining-tokens ^String rest-uri result-map]
-  "Match an empty current-token --> the parsing is over"
+  ;; Match an empty current-token --> the parsing is over
   ;(println "nil")
   (if (empty? rest-uri)
     result-map ; return the result-map only if the URI has been fully consumed, otherwise there is no hit
     {}))
 
-(defmethod match-token :default  [current-token remaining-tokens ^String rest-uri result-map]
-  "Match a constant token"
+(defmethod match-token :default [current-token remaining-tokens ^String rest-uri result-map]
+  ;; Match a constant token
   ;(println "current-token (s):" current-token)
   ;(println "rest-uri (s):" rest-uri)
   ;(println "result-map (s):" result-map)
@@ -85,15 +85,17 @@
     {}))
 
 
-(defn match-variables [^String template ^String uri]
+(defn match-variables
   "Find all the parses a given uri can have against a URI template. Return this as a set of maps (possibly empty)"
+  [^String template ^String uri]
   (let
       [tokens (tokenize template)]
     (set
      (match-token (first tokens) (rest tokens) uri {}))))
 
-(defn matches? [^String template ^String uri]
+(defn matches?
   "Indicates if a given URI has at least one match against a URI template"
+  [^String template ^String uri]
    (or (not (empty? (match-variables template uri)))
        (= template uri)))
 
