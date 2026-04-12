@@ -19,8 +19,8 @@
     ""))
 
 (defn partial-encode [^String s]
-  (clojure.string/join 
-   (map (fn[c] 
+  (cs/join
+   (map (fn[c]
           (if (>= (.indexOf special-chars (int c)) 0) c (codec/url-encode c))) s)))
 
 (defrecord Variable [text postfix])
@@ -36,7 +36,7 @@
   (let
       [parts (re-find #"\{([\.#+/\.;\?\&])?([a-zA-Z0-9\.%,_\*:]+)\}" token)]
    
-    (->Token (map parse-variable (clojure.string/split (nth parts 2) #",")) (nth parts 1))))
+    (->Token (map parse-variable (cs/split (nth parts 2) #",")) (nth parts 1))))
 
 (defmulti handle-value 
   "Handling of individual variables. Returns the variable replaced by the supplied values"
@@ -101,7 +101,7 @@
                        #(handle-value % values separator encoding-fn)
                        (:variables token)))]
        (if (not (empty? res))
-         (clojure.string/join separator res)))))
+         (cs/join separator res)))))
 
 
 (defmulti handle-token 
@@ -135,19 +135,19 @@
   (process-token token values separator first-char encoding-fn unnamed-list-generator))
 
 (defmethod handle-token "." [token values]
-  "Label expansion, dot-prefixed, cf. 3.2.5"
+  ;; Label expansion, dot-prefixed, cf. 3.2.5
   (process-unnamed-token token values "." "." full-encode))
 
 (defmethod handle-token "/" [token values]
-  "Path segments, slash-prefixed, cf. 3.2.6"
+  ;; Path segments, slash-prefixed, cf. 3.2.6
   (process-unnamed-token token values "/" "/" full-encode))
 
 (defmethod handle-token "#" [token values]
-  "Fragment expansion with multiple variables"
+  ;; Fragment expansion with multiple variables
   (process-unnamed-token token values "," "#" partial-encode))
 
 (defmethod handle-token "+" [token values]
-  "Reserved string expansion does not convert (cf. 1.5): "
+  ;; Reserved string expansion does not convert (cf. 1.5)
   (process-unnamed-token token values "," "" partial-encode))
 
 (defn- build-= [variable values r]
@@ -175,15 +175,15 @@
     (process-token token values separator first-char full-encode named-list-generator)))
 
 (defmethod handle-token "?" [token values]
-  "Form-style query, ampersand-separated"
+  ;; Form-style query, ampersand-separated
   (process-named-token token values "&" "?"))
 
 (defmethod handle-token "&" [token values]
-  "Form-style query continuation"
+  ;; Form-style query continuation
   (process-named-token token values "&" "&"))
 
 (defmethod handle-token ";" [token values]
-  "Path-style parameters, semicolon-prefixed"
+  ;; Path-style parameters, semicolon-prefixed
   ;;Special rule in 3.2.7: if a variable is empty, no = should be appended. So ;x=1024;y=768;empty and not ;x=1024;y=768;empty=
   ;hack 
   (cs/replace
@@ -191,18 +191,20 @@
    #"=$|=;" ""))
 
 (defmethod handle-token :default [token values]
-  "Variable has no special modifier, so just apply simple string expansion"
+  ;; Variable has no special modifier, so just apply simple string expansion
   (process-unnamed-token token values "," "" full-encode))
 
 
-(defn tokenize [template]
+(defn tokenize
   "Tokenize the template string, taken from https://bitbucket.org/dfa/uritemplate"
-  (re-seq #"\{[^\{]+\}|[^{}]+" template)) 
+  [template]
+  (re-seq #"\{[^\{]+\}|[^{}]+" template))
 
-(defn uritemplate ^String [^String template ^clojure.lang.IPersistentMap values]
+(defn uritemplate
   "Take a URI template and a map of values and return the resulting URI"
+  ^String [^String template ^clojure.lang.IPersistentMap values]
   (let [stringly-values (walk/stringify-keys values)]
-    (clojure.string/join
+    (cs/join
      (map
       (fn [token]
         (if (= \{ (first token))

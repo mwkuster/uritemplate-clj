@@ -1,7 +1,7 @@
 (ns uritemplate-clj.core-test
-  (:use clojure.test
-        uritemplate-clj.core
-        cheshire.core))
+  (:require [clojure.test :refer :all]
+            [uritemplate-clj.core :refer [parse-token parse-variable ->Token ->Variable uritemplate]]
+            [cheshire.core :refer [parse-stream]]))
 
 (deftest parse-token-test
   (is (= (parse-token "{var}") (->Token  (list (->Variable "var" nil)) nil)))

@@ -1,8 +1,7 @@
 (ns uritemplate-clj.match-test
-  (:use clojure.test
-        uritemplate-clj.core
-        uritemplate-clj.match
-        cheshire.core))
+  (:require [clojure.test :refer :all]
+            [uritemplate-clj.core :refer [tokenize]]
+            [uritemplate-clj.match :refer [match-variables matches? find-constant-parts fill-with-nulls uritemplate-compare]]))
 
 (deftest simple-parses-test
   (let
